@@ -1,7 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
-import { useState, useEffect, useRef } from "react";
+import { useFormStatus } from "react-dom";
+import { useState, useEffect, useRef, useActionState } from "react";
 import { extractTextFromFile, getSummary, type ExtractedContent } from "./actions";
 
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ function SubmitButton() {
 }
 
 export default function DocuExtractPage() {
-  const [state, formAction] = useFormState(extractTextFromFile, initialState);
+  const [state, formAction] = useActionState(extractTextFromFile, initialState);
   const [fileName, setFileName] = useState<string>("");
   const [summary, setSummary] = useState<string | null>(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState<boolean>(false);
