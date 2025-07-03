@@ -1,5 +1,11 @@
-# Firebase Studio
+# FileMob
 
-This is a NextJS starter in Firebase Studio.
+- Extract - Pdf, Docx, Doc, Txt, Md Files 
+- Summarize - Summarize the extracted text using Gemini 2.0 Flash
 
-To get started, take a look at src/app/page.tsx.
+Libraries used 
+1. Pdf - `pdf-parser` - https://www.npmjs.com/package/pdf-parse
+2. Docx, Doc - `word-extractor` - https://www.npmjs.com/package/word-extractor
+3. Txt, Md - `fs` - `Node.js built-in module`
+
+-dp
