@@ -2,13 +2,6 @@
 
 import WordExtractor from 'word-extractor';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
-import { z } from 'zod';
-
-const WordExtractorResultSchema = z.object({
-  getBody: z.function().returns(z.string()),
-  getFooters: z.function().returns(z.string()),
-  getHeaders: z.function().returns(z.string()),
-});
 
 export interface ExtractedContent {
   filename: string;
@@ -51,9 +44,7 @@ export async function extractTextFromFile(
             const extractor = new WordExtractor();
             const doc = await extractor.extract(Buffer.from(buffer));
 
-            const parsedDoc = WordExtractorResultSchema.safeParse(doc);
-            if (!parsedDoc.success) {
-                console.error("Word Extractor couldn't parse the document.", parsedDoc.error);
+            if (!doc || typeof doc.getBody !== 'function') {
                 return { ...prevState, error: "Failed to parse the document. It might be corrupted or in an unsupported format." };
             }
 
@@ -74,6 +65,9 @@ export async function extractTextFromFile(
         case 'txt': {
             fullText = await file.text();
             break;
+        }
+        default: {
+            return { ...prevState, error: `Unsupported file type: ${fileExtension}` };
         }
     }
 
