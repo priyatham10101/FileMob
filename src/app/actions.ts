@@ -46,7 +46,13 @@ export async function extractTextFromFile(
         case 'docx': {
             const extractor = new WordExtractor();
             const doc = await extractor.extract(nodeBuffer);
-            fullText = doc.getBody();
+            
+            const headers = doc.getHeaders();
+            const body = doc.getBody();
+            const footers = doc.getFooters();
+
+            const contentParts = [headers, body, footers];
+            fullText = contentParts.filter(part => part && part.trim()).join('\n\n');
             break;
         }
         case 'pdf': {
@@ -68,7 +74,7 @@ export async function extractTextFromFile(
     return {
       extractedContent: {
         filename: file.name,
-        fullText: fullText || "No content extracted.",
+        fullText: fullText.trim() || "No content extracted.",
       },
       error: null,
     };
