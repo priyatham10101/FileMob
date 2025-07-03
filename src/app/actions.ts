@@ -3,6 +3,9 @@
 import WordExtractor from 'word-extractor';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 
+// By requiring the lib file directly, we bypass a potential issue in the package's main entry point.
+const pdf = require('pdf-parse/lib/pdf-parse');
+
 export interface ExtractedContent {
   filename: string;
   fullText: string;
@@ -44,20 +47,10 @@ export async function extractTextFromFile(
         case 'docx': {
             const extractor = new WordExtractor();
             const doc = await extractor.extract(nodeBuffer);
-
-            if (!doc || typeof doc.getBody !== 'function') {
-                return { ...prevState, error: "Failed to parse the document. It might be corrupted or in an unsupported format." };
-            }
-
-            const body = doc.getBody();
-            const header = doc.getHeaders();
-            const footer = doc.getFooters();
-            
-            fullText = [header, body, footer].filter(Boolean).join('\n\n');
+            fullText = doc.getBody();
             break;
         }
         case 'pdf': {
-            const pdf = (await import('pdf-parse')).default;
             const data = await pdf(nodeBuffer);
             fullText = data.text;
             break;
