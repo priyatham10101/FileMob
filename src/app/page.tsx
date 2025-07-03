@@ -1,19 +1,19 @@
 "use client";
 
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { useState, useEffect, useRef, useActionState } from "react";
-import { extractTextFromFile, getSummary, type ExtractedContent } from "./actions";
+import { type ExtractedContent, extractTextFromFile, getSummary } from "./actions";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-import { FileUp, Download, Sparkles, Loader2, FileText } from 'lucide-react';
+import { Download, FileText, Loader2, Sparkles, UploadCloud } from 'lucide-react';
 
 const initialState = {
   error: null,
@@ -39,7 +39,7 @@ function SubmitButton() {
   );
 }
 
-export default function DocuExtractPage() {
+export default function FileMobPage() {
   const [state, formAction] = useActionState(extractTextFromFile, initialState);
   const [fileName, setFileName] = useState<string>("");
   const [summary, setSummary] = useState<string | null>(null);
@@ -101,13 +101,13 @@ export default function DocuExtractPage() {
   };
 
   return (
-    <main className="min-h-screen w-full bg-background flex flex-col items-center p-4 sm:p-8 space-y-8">
-      <div className="text-center">
-        <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary">DocuExtract</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Upload a document to extract its text and generate an AI summary.</p>
+    <main className="min-h-screen w-full bg-gradient-to-br from-background to-muted/30 flex flex-col items-center p-4 sm:p-8 space-y-8">
+      <div className="text-center space-y-2">
+        <h1 className="font-headline text-5xl sm:text-6xl font-extrabold text-primary tracking-tight">FileMob</h1>
+        <p className="text-muted-foreground text-lg max-w-2xl">Unlock insights from any document. Upload a file to instantly extract text and generate an AI-powered summary.</p>
       </div>
 
-      <Card className="w-full max-w-3xl shadow-lg">
+      <Card className="w-full max-w-3xl shadow-lg border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Upload Document</CardTitle>
           <CardDescription>Select a PDF, DOC, DOCX, TXT, or MD file from your computer.</CardDescription>
@@ -115,11 +115,11 @@ export default function DocuExtractPage() {
         <form action={formAction} ref={formRef}>
           <CardContent className="space-y-4">
               <Label htmlFor="file-upload" className="block">
-                <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <FileUp className="w-10 h-10 mb-3 text-muted-foreground" />
-                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                    <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, TXT, MD (MAX. 5MB)</p>
+                <div className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                    <UploadCloud className="w-12 h-12 mb-4 text-primary" />
+                    <p className="mb-2 text-lg text-foreground font-semibold">Click to upload or drag and drop</p>
+                    <p className="text-sm text-muted-foreground">PDF, DOC, DOCX, TXT, MD (MAX. 5MB)</p>
                   </div>
                   <Input id="file-upload" name="file" type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md" onChange={handleFileChange} />
                 </div>
@@ -133,9 +133,9 @@ export default function DocuExtractPage() {
       </Card>
       
       {state.extractedContent && (
-         <Card className="w-full max-w-3xl shadow-lg animate-in fade-in-50 duration-500">
+         <Card className="w-full max-w-3xl shadow-lg animate-in fade-in-50 duration-500 bg-card/80 backdrop-blur-sm">
             <CardHeader>
-                <CardTitle>{state.extractedContent.filename}</CardTitle>
+                <CardTitle className="break-words">{state.extractedContent.filename}</CardTitle>
                 <CardDescription>Extracted content and AI tools.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -145,12 +145,12 @@ export default function DocuExtractPage() {
                         <TabsTrigger value="summary">AI Summary</TabsTrigger>
                     </TabsList>
                     <TabsContent value="text" className="mt-4">
-                        <ScrollArea className="h-96 w-full rounded-md border p-4">
-                            <pre className="text-sm whitespace-pre-wrap">{state.extractedContent.fullText}</pre>
+                        <ScrollArea className="h-96 w-full rounded-md border bg-background/50 p-4">
+                            <pre className="text-sm whitespace-pre-wrap font-code">{state.extractedContent.fullText}</pre>
                         </ScrollArea>
                     </TabsContent>
                     <TabsContent value="summary" className="mt-4">
-                       <div className="p-4 border rounded-lg min-h-[200px] flex flex-col justify-center items-center space-y-4">
+                       <div className="p-4 border rounded-lg min-h-[200px] flex flex-col justify-center items-center space-y-4 bg-background/50">
                            {isSummaryLoading ? (
                                <div className="w-full space-y-2">
                                    <Skeleton className="h-4 w-full" />
@@ -159,13 +159,13 @@ export default function DocuExtractPage() {
                                </div>
                            ) : summary ? (
                                 <ScrollArea className="h-96 w-full">
-                                  <p className="text-sm text-foreground p-1">{summary}</p>
+                                  <p className="text-sm text-foreground p-1 whitespace-pre-wrap">{summary}</p>
                                 </ScrollArea>
                            ) : (
                                 <>
-                                    <Sparkles className="h-8 w-8 text-muted-foreground" />
+                                    <Sparkles className="h-10 w-10 text-primary" />
                                     <p className="text-muted-foreground text-center">Generate a concise summary of the document's content.</p>
-                                    <Button onClick={handleSummarize} variant="secondary" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+                                    <Button onClick={handleSummarize}>
                                         <Sparkles className="mr-2 h-4 w-4" />
                                         Summarize with AI
                                     </Button>
