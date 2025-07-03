@@ -47,11 +47,15 @@ export async function extractTextFromFile(
             const extractor = new WordExtractor();
             const doc = await extractor.extract(nodeBuffer);
             
-            const headers = doc.getHeaders();
-            const body = doc.getBody();
-            const footers = doc.getFooters();
+            const contentParts = [
+                doc.getHeaders(),
+                doc.getBody(),
+                doc.getFooters(),
+                doc.getFootnotes(),
+                doc.getEndNotes(),
+                doc.getAnnotations()
+            ];
 
-            const contentParts = [headers, body, footers];
             fullText = contentParts.filter(part => part && part.trim()).join('\n\n');
             break;
         }
