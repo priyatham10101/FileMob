@@ -35,14 +35,15 @@ export async function extractTextFromFile(
   }
 
   try {
-    const buffer = await file.arrayBuffer();
+    const arrayBuffer = await file.arrayBuffer();
+    const nodeBuffer = Buffer.from(arrayBuffer);
     let fullText = '';
 
     switch (fileExtension) {
         case 'doc':
         case 'docx': {
             const extractor = new WordExtractor();
-            const doc = await extractor.extract(Buffer.from(buffer));
+            const doc = await extractor.extract(nodeBuffer);
 
             if (!doc || typeof doc.getBody !== 'function') {
                 return { ...prevState, error: "Failed to parse the document. It might be corrupted or in an unsupported format." };
@@ -57,7 +58,7 @@ export async function extractTextFromFile(
         }
         case 'pdf': {
             const pdf = (await import('pdf-parse')).default;
-            const data = await pdf(Buffer.from(buffer));
+            const data = await pdf(nodeBuffer);
             fullText = data.text;
             break;
         }
