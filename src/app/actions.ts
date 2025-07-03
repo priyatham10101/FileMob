@@ -51,8 +51,7 @@ export async function extractTextFromFile(
                 doc.getHeaders(),
                 doc.getBody(),
                 doc.getFooters(),
-                doc.getFootnotes(),
-                doc.getEndNotes(),
+                doc.getTextboxes(),
                 doc.getAnnotations()
             ];
 
