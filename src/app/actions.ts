@@ -29,16 +29,12 @@ export async function extractTextFromFile(
   if (!file || file.size === 0) {
     return { ...prevState, error: 'Please select a file to upload.' };
   }
-
-  const allowedTypes = [
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ];
   
-  const isAllowedType = allowedTypes.includes(file.type) || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+  const fileExtension = file.name.split('.').pop()?.toLowerCase();
+  const allowedExtensions = ['doc', 'docx', 'pdf', 'md', 'txt'];
 
-  if (!isAllowedType) {
-    return { ...prevState, error: 'Invalid file type. Please upload a .doc or .docx file.' };
+  if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+    return { ...prevState, error: 'Invalid file type. Please upload a PDF, DOC, DOCX, TXT, or MD file.' };
   }
   
   if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -47,20 +43,40 @@ export async function extractTextFromFile(
 
   try {
     const buffer = await file.arrayBuffer();
-    const extractor = new WordExtractor();
-    const doc = await extractor.extract(Buffer.from(buffer));
+    let fullText = '';
 
-    const parsedDoc = WordExtractorResultSchema.safeParse(doc);
-    if (!parsedDoc.success) {
-        console.error("Word Extractor couldn't parse the document.", parsedDoc.error);
-        return { ...prevState, error: "Failed to parse the document. It might be corrupted or in an unsupported format." };
+    switch (fileExtension) {
+        case 'doc':
+        case 'docx': {
+            const extractor = new WordExtractor();
+            const doc = await extractor.extract(Buffer.from(buffer));
+
+            const parsedDoc = WordExtractorResultSchema.safeParse(doc);
+            if (!parsedDoc.success) {
+                console.error("Word Extractor couldn't parse the document.", parsedDoc.error);
+                return { ...prevState, error: "Failed to parse the document. It might be corrupted or in an unsupported format." };
+            }
+
+            const body = doc.getBody();
+            const header = doc.getHeaders();
+            const footer = doc.getFooters();
+            
+            fullText = [header, body, footer].filter(Boolean).join('\n\n');
+            break;
+        }
+        case 'pdf': {
+            const pdf = (await import('pdf-parse')).default;
+            const data = await pdf(Buffer.from(buffer));
+            fullText = data.text;
+            break;
+        }
+        case 'md':
+        case 'txt': {
+            fullText = await file.text();
+            break;
+        }
     }
 
-    const body = doc.getBody();
-    const header = doc.getHeaders();
-    const footer = doc.getFooters();
-
-    const fullText = [header, body, footer].filter(Boolean).join('\n\n');
 
     return {
       extractedContent: {

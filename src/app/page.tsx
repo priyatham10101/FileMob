@@ -110,7 +110,7 @@ export default function DocuExtractPage() {
       <Card className="w-full max-w-3xl shadow-lg">
         <CardHeader>
           <CardTitle>Upload Document</CardTitle>
-          <CardDescription>Select a .doc or .docx file from your computer.</CardDescription>
+          <CardDescription>Select a PDF, DOC, DOCX, TXT, or MD file from your computer.</CardDescription>
         </CardHeader>
         <form action={formAction} ref={formRef}>
           <CardContent className="space-y-4">
@@ -119,9 +119,9 @@ export default function DocuExtractPage() {
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <FileUp className="w-10 h-10 mb-3 text-muted-foreground" />
                     <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                    <p className="text-xs text-muted-foreground">DOC, DOCX (MAX. 5MB)</p>
+                    <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, TXT, MD (MAX. 5MB)</p>
                   </div>
-                  <Input id="file-upload" name="file" type="file" className="hidden" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} />
+                  <Input id="file-upload" name="file" type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.md" onChange={handleFileChange} />
                 </div>
               </Label>
               {fileName && <p className="text-sm text-center text-muted-foreground">Selected file: <span className="font-medium text-foreground">{fileName}</span></p>}
