@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -71,9 +70,9 @@ export default function DocuExtractPage() {
   };
 
   const handleSummarize = async () => {
-    if (!state.extractedContent?.body) return;
+    if (!state.extractedContent?.fullText) return;
     setIsSummaryLoading(true);
-    const result = await getSummary(state.extractedContent.body);
+    const result = await getSummary(state.extractedContent.fullText);
     if (result.error) {
         toast({
             variant: "destructive",
@@ -88,19 +87,7 @@ export default function DocuExtractPage() {
   
   const handleDownload = () => {
     if (!state.extractedContent) return;
-    const { filename, header, body, footer } = state.extractedContent;
-    const fullText = `
-Document: ${filename}
-
-================== HEADER ==================
-${header || 'No header content extracted.'}
-
-================== BODY ==================
-${body || 'No body content extracted.'}
-
-================== FOOTER ==================
-${footer || 'No footer content extracted.'}
-    `.trim();
+    const { filename, fullText } = state.extractedContent;
     
     const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -158,36 +145,9 @@ ${footer || 'No footer content extracted.'}
                         <TabsTrigger value="summary">AI Summary</TabsTrigger>
                     </TabsList>
                     <TabsContent value="text" className="mt-4">
-                        <Accordion type="single" collapsible defaultValue="body" className="w-full">
-                            <AccordionItem value="body">
-                                <AccordionTrigger>Body</AccordionTrigger>
-                                <AccordionContent>
-                                    <ScrollArea className="h-72 w-full rounded-md border p-4">
-                                        <pre className="text-sm whitespace-pre-wrap">{state.extractedContent.body || "No body content."}</pre>
-                                    </ScrollArea>
-                                </AccordionContent>
-                            </AccordionItem>
-                            {state.extractedContent.header && (
-                                <AccordionItem value="header">
-                                    <AccordionTrigger>Header</AccordionTrigger>
-                                    <AccordionContent>
-                                        <ScrollArea className="h-40 w-full rounded-md border p-4">
-                                            <pre className="text-sm whitespace-pre-wrap">{state.extractedContent.header}</pre>
-                                        </ScrollArea>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            )}
-                            {state.extractedContent.footer && (
-                                <AccordionItem value="footer">
-                                    <AccordionTrigger>Footer</AccordionTrigger>
-                                    <AccordionContent>
-                                        <ScrollArea className="h-40 w-full rounded-md border p-4">
-                                            <pre className="text-sm whitespace-pre-wrap">{state.extractedContent.footer}</pre>
-                                        </ScrollArea>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            )}
-                        </Accordion>
+                        <ScrollArea className="h-96 w-full rounded-md border p-4">
+                            <pre className="text-sm whitespace-pre-wrap">{state.extractedContent.fullText}</pre>
+                        </ScrollArea>
                     </TabsContent>
                     <TabsContent value="summary" className="mt-4">
                        <div className="p-4 border rounded-lg min-h-[200px] flex flex-col justify-center items-center space-y-4">
@@ -198,13 +158,13 @@ ${footer || 'No footer content extracted.'}
                                    <Skeleton className="h-4 w-3/4" />
                                </div>
                            ) : summary ? (
-                                <ScrollArea className="h-72 w-full">
+                                <ScrollArea className="h-96 w-full">
                                   <p className="text-sm text-foreground p-1">{summary}</p>
                                 </ScrollArea>
                            ) : (
                                 <>
                                     <Sparkles className="h-8 w-8 text-muted-foreground" />
-                                    <p className="text-muted-foreground text-center">Generate a concise summary of the document's body content.</p>
+                                    <p className="text-muted-foreground text-center">Generate a concise summary of the document's content.</p>
                                     <Button onClick={handleSummarize} variant="secondary" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
                                         <Sparkles className="mr-2 h-4 w-4" />
                                         Summarize with AI

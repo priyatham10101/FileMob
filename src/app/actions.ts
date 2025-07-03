@@ -12,9 +12,7 @@ const WordExtractorResultSchema = z.object({
 
 export interface ExtractedContent {
   filename: string;
-  body: string;
-  header: string;
-  footer: string;
+  fullText: string;
 }
 
 interface FormState {
@@ -62,12 +60,12 @@ export async function extractTextFromFile(
     const header = doc.getHeaders();
     const footer = doc.getFooters();
 
+    const fullText = [header, body, footer].filter(Boolean).join('\n\n');
+
     return {
       extractedContent: {
         filename: file.name,
-        body,
-        header,
-        footer,
+        fullText: fullText || "No content extracted.",
       },
       error: null,
     };
@@ -80,7 +78,7 @@ export async function extractTextFromFile(
 
 export async function getSummary(text: string): Promise<{ summary: string, error?: null } | { error: string, summary?: null }> {
     if (!text || text.trim().length < 50) { 
-        return { error: "There is not enough content in the document body to generate a summary." };
+        return { error: "There is not enough content in the document to generate a summary." };
     }
     try {
         const result = await summarizeDocument({ text });
