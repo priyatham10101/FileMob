@@ -3,8 +3,7 @@
 import WordExtractor from 'word-extractor';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 
-// By requiring the lib file directly, we bypass a potential issue in the package's main entry point.
-const pdf = require('pdf-parse/lib/pdf-parse');
+const pdf = require('pdf-parse');
 
 export interface ExtractedContent {
   filename: string;
