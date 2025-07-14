@@ -3,7 +3,7 @@
 import WordExtractor from 'word-extractor';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 
-const pdf = require('pdf-parse');
+import pdf from 'pdf-parse';
 
 export interface ExtractedContent {
   filename: string;
@@ -13,6 +13,18 @@ export interface ExtractedContent {
 interface FormState {
   error?: string | null;
   extractedContent?: ExtractedContent | null;
+}
+
+// Add text cleaning utility
+function cleanExtractedText(text: string): string {
+  return text
+    // Remove extra blank lines
+    .replace(/\n{3,}/g, '\n\n')
+    // Remove leading/trailing whitespace on each line
+    .split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n')
+    // Normalize multiple spaces
+    .replace(/ {2,}/g, ' ')
+    .trim();
 }
 
 export async function extractTextFromFile(
@@ -77,7 +89,7 @@ export async function extractTextFromFile(
     return {
       extractedContent: {
         filename: file.name,
-        fullText: fullText.trim() || "No content extracted.",
+        fullText: cleanExtractedText(fullText) || "No content extracted.",
       },
       error: null,
     };

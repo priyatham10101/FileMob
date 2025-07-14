@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { type ExtractedContent, extractTextFromFile, getSummary } from "./actions";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,21 @@ export default function FileMobPage() {
       <div className="text-center space-y-2">
         <h1 className="font-headline text-5xl sm:text-6xl font-extrabold text-primary tracking-tight">FileMob</h1>
         <p className="text-muted-foreground text-lg max-w-2xl">Unlock insights from any document. Upload a file to instantly extract text and generate an AI-powered summary.</p>
+      </div>
+
+      {/* Bulk Extract Feature Card/Button */}
+      <div className="w-full max-w-3xl flex justify-center">
+        <a href="/bulk-extract" className="block w-full">
+          <Card className="w-full shadow-lg border-primary/40 bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-primary">
+                <UploadCloud className="h-6 w-6" />
+                Bulk Folder Extract
+              </CardTitle>
+              <CardDescription>Automatically extract and convert all supported files from a folder to .txt files in another folder.</CardDescription>
+            </CardHeader>
+          </Card>
+        </a>
       </div>
 
       <Card className="w-full max-w-3xl shadow-lg border-border/50 bg-card/50 backdrop-blur-sm">
