@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsp from 'fs/promises';
 import path from 'path';
 import WordExtractor from 'word-extractor';
 import pdf from 'pdf-parse';
+const parseRTF = require('rtf-parser');
 
-const allowedExtensions = ['doc', 'docx', 'pdf', 'md', 'txt'];
+
+const allowedExtensions = ['doc', 'docx', 'pdf', 'md', 'txt', 'rtf'];
 
 // Utility to robustly decode buffer as UTF-8, replacing invalid bytes
 function decodeUtf8WithReplacement(buffer: Buffer): string {
@@ -17,8 +20,9 @@ function decodeUtf8WithReplacement(buffer: Buffer): string {
   }
 }
 
+
 async function extractText(filePath: string, ext: string): Promise<string> {
-  const nodeBuffer = await fs.readFile(filePath);
+  const nodeBuffer = await fsp.readFile(filePath);
   switch (ext) {
     case 'doc':
     case 'docx': {
@@ -41,6 +45,28 @@ async function extractText(filePath: string, ext: string): Promise<string> {
     case 'txt': {
       // Robustly decode as UTF-8, replacing invalid bytes
       return decodeUtf8WithReplacement(nodeBuffer);
+    }
+    case 'rtf': {
+      // Use rtf-parser to extract text from RTF
+      return new Promise((resolve) => {
+        const stream = fs.createReadStream(filePath);
+        parseRTF.stream(stream, (err: any, doc: any) => {
+          if (err || !doc) return resolve('');
+          // Extract plain text from the RTFDocument structure
+          function extractPlainTextFromDoc(doc: any): string {
+            if (!doc) return '';
+            if (Array.isArray(doc.content)) {
+              return doc.content.map(extractPlainTextFromParagraph).join('\n');
+            }
+            return '';
+          }
+          function extractPlainTextFromParagraph(paragraph: any): string {
+            if (!paragraph || !Array.isArray(paragraph.content)) return '';
+            return paragraph.content.map((span: any) => span.value || '').join('');
+          }
+          resolve(extractPlainTextFromDoc(doc));
+        });
+      });
     }
     default:
       throw new Error('Unsupported file type: ' + ext);
@@ -69,6 +95,15 @@ function advancedCleanText(text: string): string {
   return cleaned.trim();
 }
 
+// Utility to clean file names by removing non-ASCII characters (preserve extension)
+function cleanFileName(fileName: string): string {
+  const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : '';
+  const base = fileName.replace(new RegExp(ext + '$'), '');
+  // Remove non-ASCII chars from base, collapse spaces, trim
+  const cleanedBase = base.replace(/[^\x20-\x7E]+/g, '').replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+  return cleanedBase + ext;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { inputPath, outputPath, files } = await req.json();
@@ -81,13 +116,13 @@ export async function POST(req: NextRequest) {
     for (const file of files) {
       const ext = file.split('.').pop()?.toLowerCase();
       if (!ext || !allowedExtensions.includes(ext)) {
-        statuses[file] = 'failed';
-        logs.push(`${file}: Skipped (unsupported extension)`);
+        statuses[cleanFileName(file)] = 'failed';
+        logs.push(`${cleanFileName(file)}: Skipped (unsupported extension)`);
         continue;
       }
       
       const inputFilePath = path.join(inputPath, file);
-      const outputFileName = file.replace(/\.[^.]+$/, '.txt');
+      const outputFileName = cleanFileName(file.replace(/\.[^.]+$/, '.txt'));
       const outputFilePath = path.join(outputPath, outputFileName);
       
       try {
@@ -95,16 +130,16 @@ export async function POST(req: NextRequest) {
         const text = await extractText(inputFilePath, ext);
         const cleanedText = advancedCleanText(text);
         if (!cleanedText || cleanedText.length < 5) {
-          statuses[file] = 'failed';
-          logs.push(`${file}: Failed - Could not extract valid UTF-8 text or file is empty after cleaning.`);
+          statuses[cleanFileName(file)] = 'failed';
+          logs.push(`${cleanFileName(file)}: Failed - Could not extract valid UTF-8 text or file is empty after cleaning.`);
           continue;
         }
-        await fs.writeFile(outputFilePath, cleanedText, 'utf-8');
-        statuses[file] = 'processed';
-        logs.push(`${file}: Processed successfully.`);
+        await fsp.writeFile(outputFilePath, cleanedText, 'utf-8');
+        statuses[cleanFileName(file)] = 'processed';
+        logs.push(`${cleanFileName(file)}: Processed successfully.`);
       } catch (err) {
-        statuses[file] = 'failed';
-        logs.push(`${file}: Failed - ${(err as Error).message}`);
+        statuses[cleanFileName(file)] = 'failed';
+        logs.push(`${cleanFileName(file)}: Failed - ${(err as Error).message}`);
       }
     }
     

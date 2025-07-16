@@ -17,6 +17,15 @@ const STATUS_COLORS = {
   queue: 'text-yellow-600',
 };
 
+// Utility to clean file names by removing non-ASCII characters (preserve extension)
+function cleanFileName(fileName: string): string {
+  const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : '';
+  const base = fileName.replace(new RegExp(ext + '$'), '');
+  // Remove non-ASCII chars from base, collapse spaces, trim
+  const cleanedBase = base.replace(/[^\x20-\x7E]+/g, '').replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+  return cleanedBase + ext;
+}
+
 export default function BulkExtractPage() {
   const [inputPath, setInputPath] = useState("/Users/admin/dev/FileMob/input");
   const [outputPath, setOutputPath] = useState("/Users/admin/dev/FileMob/output");
@@ -404,7 +413,7 @@ export default function BulkExtractPage() {
                       <div key={i} className="flex items-center gap-2 justify-between px-1 py-0.5 rounded hover:bg-primary/10 transition">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="truncate max-w-[160px] md:max-w-[220px]">{file}</span>
+                          <span className="truncate max-w-[160px] md:max-w-[220px]">{cleanFileName(file)}</span>
                         </div>
                         <StatusBadge status={fileStatus[file] || 'queue'} />
                       </div>
@@ -496,7 +505,7 @@ export default function BulkExtractPage() {
                     outputFiles.map((file, i) => (
                       <div key={i} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-primary/10 transition text-green-700">
                         <FileText className="h-4 w-4" />
-                        <span className="truncate max-w-[180px] md:max-w-[240px]">{file}</span>
+                        <span className="truncate max-w-[180px] md:max-w-[240px]">{cleanFileName(file)}</span>
                       </div>
                     ))
                   )}
