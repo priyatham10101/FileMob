@@ -1,10 +1,12 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
-    serverComponentsExternalPackages: ['pdf-parse'],
+    serverActions: {
+      bodySizeLimit: '10mb', // or higher, e.g. '50mb'
+    },
   },
+  serverExternalPackages: ['pdf-parse'],
   typescript: {
     ignoreBuildErrors: true,
   },

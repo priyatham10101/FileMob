@@ -3,7 +3,9 @@
 import WordExtractor from 'word-extractor';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 
-const pdf = require('pdf-parse');
+import pdf from 'pdf-parse';
+const parseRTF = require('rtf-parser');
+import fs from 'fs';
 
 export interface ExtractedContent {
   filename: string;
@@ -13,6 +15,27 @@ export interface ExtractedContent {
 interface FormState {
   error?: string | null;
   extractedContent?: ExtractedContent | null;
+}
+
+// Add text cleaning utility
+function cleanExtractedText(text: string): string {
+  return text
+    // Remove extra blank lines
+    .replace(/\n{3,}/g, '\n\n')
+    // Remove leading/trailing whitespace on each line
+    .split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n')
+    // Normalize multiple spaces
+    .replace(/ {2,}/g, ' ')
+    .trim();
+}
+
+// Utility to clean file names by removing non-ASCII characters (preserve extension)
+function cleanFileName(fileName: string): string {
+  const ext = fileName.includes('.') ? '.' + fileName.split('.').pop() : '';
+  const base = fileName.replace(new RegExp(ext + '$'), '');
+  // Remove non-ASCII chars from base, collapse spaces, trim
+  const cleanedBase = base.replace(/[^\x20-\x7E]+/g, '').replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+  return cleanedBase + ext;
 }
 
 export async function extractTextFromFile(
@@ -26,10 +49,10 @@ export async function extractTextFromFile(
   }
   
   const fileExtension = file.name.split('.').pop()?.toLowerCase();
-  const allowedExtensions = ['doc', 'docx', 'pdf', 'md', 'txt'];
+  const allowedExtensions = ['doc', 'docx', 'pdf', 'md', 'txt', 'rtf'];
 
   if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-    return { ...prevState, error: 'Invalid file type. Please upload a PDF, DOC, DOCX, TXT, or MD file.' };
+    return { ...prevState, error: 'Invalid file type. Please upload a PDF, DOC, DOCX, TXT, RTF or MD file.' };
   }
   
   if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -68,6 +91,31 @@ export async function extractTextFromFile(
             fullText = await file.text();
             break;
         }
+        case 'rtf': {
+            // Use rtf-parser to extract text from RTF
+            fullText = await new Promise((resolve) => {
+                const tmpPath = `/tmp/rtf-upload-${Date.now()}-${Math.random()}.rtf`;
+                require('fs').writeFileSync(tmpPath, nodeBuffer);
+                const stream = fs.createReadStream(tmpPath);
+                parseRTF.stream(stream, (err: any, doc: any) => {
+                    require('fs').unlinkSync(tmpPath);
+                    if (err || !doc) return resolve('');
+                    function extractPlainTextFromDoc(doc: any): string {
+                        if (!doc) return '';
+                        if (Array.isArray(doc.content)) {
+                            return doc.content.map(extractPlainTextFromParagraph).join('\n');
+                        }
+                        return '';
+                    }
+                    function extractPlainTextFromParagraph(paragraph: any): string {
+                        if (!paragraph || !Array.isArray(paragraph.content)) return '';
+                        return paragraph.content.map((span: any) => span.value || '').join('');
+                    }
+                    resolve(extractPlainTextFromDoc(doc));
+                });
+            });
+            break;
+        }
         default: {
             return { ...prevState, error: `Unsupported file type: ${fileExtension}` };
         }
@@ -76,8 +124,8 @@ export async function extractTextFromFile(
 
     return {
       extractedContent: {
-        filename: file.name,
-        fullText: fullText.trim() || "No content extracted.",
+        filename: cleanFileName(file.name),
+        fullText: cleanExtractedText(fullText) || "No content extracted.",
       },
       error: null,
     };
